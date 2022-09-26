@@ -3,3 +3,5 @@ data/input/*.csv
 .idea
 *__pycache__*
 notebooks/.ipynb_checkpoints
+*.pytest_cache
+*.log
