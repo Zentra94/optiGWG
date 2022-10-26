@@ -10,9 +10,8 @@ class TestPrediction(unittest.TestCase):
         targets = predictor.targets
         for t in targets:
             path = PATH_DATA_INPUT / "01_preprocess_balanced_{}.csv".format(t)
-            data = pd.read_csv(path, index_col=0, nrows=5)
+            data = pd.read_csv(path, index_col=0, nrows=1)
             pred = predictor.predict(X=data, target_name=t)
-
             self.assertEqual(len(pred), len(data))
 
 
