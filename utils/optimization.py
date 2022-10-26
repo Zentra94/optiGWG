@@ -24,7 +24,7 @@ def plot_gwg_optimization(pred_by_gwg, interval_recommendation=None, path=None, 
     if title is None:
         title = "GWG optimization"
 
-    plt.subplots(figsize=(10, 8))
+    plt.subplots(figsize=(15, 8))
     plt.plot(pred_by_gwg["GWG"], pred_by_gwg["pred"])
     plt.plot(interval_recommendation["best_gwg"][0], interval_recommendation["best_gwg"][1],
              c="r", marker='o', markeredgecolor="red", label="best GWG")
@@ -32,7 +32,7 @@ def plot_gwg_optimization(pred_by_gwg, interval_recommendation=None, path=None, 
                 linestyle="dashed", linewidth=1, alpha=0.8)
     plt.axvline(x=interval_recommendation["max_gwg"][0], color='r', label='max GWG',
                 linestyle="dashed", linewidth=1, alpha=0.8)
-
+    plt.xticks(ticks=pred_by_gwg["GWG"])
     plt.grid(True)
     plt.title(title)
     plt.savefig(path)
