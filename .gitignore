@@ -5,3 +5,4 @@ data/input/*.csv
 notebooks/.ipynb_checkpoints
 *.pytest_cache
 *.log
+notebooks/catboost_info
