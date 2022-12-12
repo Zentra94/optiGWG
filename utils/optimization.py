@@ -115,11 +115,13 @@ def get_gwg_interval_recommendations_from_features(patients_features, gwg_limit=
 
 def get_gwg_interval_recommendation_2T(pred_by_gwg,
                                        pred_by_gwg_const,
+                                       const_name1="LGA",
+                                       const_name2="SGA",
                                        gwg_limit=3,
                                        pred_limit=0.05,
-                                       const_th=0.1):
-
-    mask = pred_by_gwg_const["pred"] < const_th
+                                       const_th1=0.1,
+                                       const_th2=0.1):
+    mask = (pred_by_gwg_const[const_name1] < const_th1) & (pred_by_gwg_const[const_name2] < const_th2)
     if pred_by_gwg[mask].empty:
         return {"min_gwg": (None, None), "max_gwg": (None, None), "best_gwg": (None, None)}
 
@@ -130,28 +132,33 @@ def get_gwg_interval_recommendation_2T(pred_by_gwg,
     min_idx = best_idx
     min_gwg = best_gwg
     min_pred = best_pred
-    current_const = pred_by_gwg_const.loc[min_idx, "pred"]
+
+    current_const1 = pred_by_gwg_const.loc[min_idx, const_name1]
+    current_const2 = pred_by_gwg_const.loc[min_idx, const_name2]
 
     while min_idx - 1 in pred_by_gwg.index and abs(min_gwg - best_gwg) < gwg_limit and abs(
-            min_pred - best_pred) < pred_limit and current_const < const_th:
+            min_pred - best_pred) < pred_limit and current_const1 < const_th1 and current_const2 < const_th2:
         min_idx += -1
         min_gwg = pred_by_gwg.loc[min_idx, "GWG"]
         min_pred = pred_by_gwg.loc[min_idx, "pred"]
 
-        current_const = pred_by_gwg_const.loc[min_idx, "pred"]
+        current_const1 = pred_by_gwg_const.loc[min_idx, const_name1]
+        current_const2 = pred_by_gwg_const.loc[min_idx, const_name2]
 
     max_idx = best_idx
     max_gwg = best_gwg
     max_pred = best_pred
-    current_const = pred_by_gwg_const.loc[max_idx, "pred"]
+    current_const1 = pred_by_gwg_const.loc[max_idx, const_name1]
+    current_const2 = pred_by_gwg_const.loc[max_idx, const_name2]
 
     while max_idx + 1 in pred_by_gwg.index and abs(max_gwg - best_gwg) < gwg_limit and abs(
-            max_pred - best_pred) < pred_limit and current_const < const_th:
+            max_pred - best_pred) < pred_limit and current_const1 < const_th1 and current_const2 < const_th2:
         max_idx += +1
         max_gwg = pred_by_gwg.loc[max_idx, "GWG"]
         max_pred = pred_by_gwg.loc[max_idx, "pred"]
 
-        current_const = pred_by_gwg_const.loc[max_idx, "pred"]
+        current_const1 = pred_by_gwg_const.loc[max_idx, const_name1]
+        current_const2 = pred_by_gwg_const.loc[max_idx, const_name2]
 
     return {"min_gwg": (min_gwg, min_pred), "max_gwg": (max_gwg, max_pred), "best_gwg": (best_gwg, best_pred)}
 
@@ -159,7 +166,10 @@ def get_gwg_interval_recommendation_2T(pred_by_gwg,
 def get_gwg_interval_recommendations_from_features_2T(patients_features,
                                                       gwg_limit=3,
                                                       pred_limit=0.05,
-                                                      const_th=0.18,
+                                                      const_th1=0.1,
+                                                      const_name1="LGA",
+                                                      const_name2="SGA",
+                                                      const_th2=0.1,
                                                       predictor=None,
                                                       predictor_const=None,
                                                       gwg_range=None):
@@ -180,15 +190,29 @@ def get_gwg_interval_recommendations_from_features_2T(patients_features,
                                       patient_features=patient_features,
                                       gwg_range=gwg_range)
 
-        pred_by_gwg_const = get_pred_by_gwg(predictor=predictor_const,
-                                            patient_features=patient_features,
-                                            gwg_range=gwg_range)
+        pred_by_gwg_const_LGA = get_pred_by_gwg(predictor=Predictor(targets=[const_name1]),
+                                                patient_features=patient_features,
+                                                gwg_range=gwg_range,
+                                                weights={const_name1: [1]})
+
+        pred_by_gwg_const_SGA = get_pred_by_gwg(predictor=Predictor(targets=[const_name2]),
+                                                patient_features=patient_features,
+                                                gwg_range=gwg_range,
+                                                weights={const_name2: [1]})
+
+        pred_by_gwg_const_LGA.rename(inplace=True, columns={"pred": const_name1})
+        pred_by_gwg_const_SGA.rename(inplace=True, columns={"pred": const_name2})
+
+        pred_by_gwg_const = pred_by_gwg_const_LGA.merge(pred_by_gwg_const_SGA, on="GWG")
 
         gwg_interval_recommendation = get_gwg_interval_recommendation_2T(pred_by_gwg=pred_by_gwg,
                                                                          pred_by_gwg_const=pred_by_gwg_const,
+                                                                         const_name1=const_name1,
+                                                                         const_name2=const_name2,
                                                                          gwg_limit=gwg_limit,
                                                                          pred_limit=pred_limit,
-                                                                         const_th=const_th)
+                                                                         const_th1=const_th1,
+                                                                         const_th2=const_th2)
         recom_fmt = {}
 
         for k in gwg_interval_recommendation:
@@ -204,5 +228,3 @@ def get_gwg_interval_recommendations_from_features_2T(patients_features,
     print("Total time {} to process {} obs".format(df, len(patients_features)))
 
     return gwg_interval_recommendations
-
-    pass

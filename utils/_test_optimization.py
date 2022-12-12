@@ -92,17 +92,30 @@ class TestOptimization(unittest.TestCase):
                                       patient_features=self.patient_features,
                                       gwg_range=self.gwg_range,
                                       weights=self.weights_2T)
-        pred_by_gwg_const = get_pred_by_gwg(predictor=Predictor(targets=["LGA_SGA"]),
-                                            patient_features=self.patient_features,
-                                            gwg_range=self.gwg_range,
-                                            weights={"LGA_SGA": [1]})
+
+        pred_by_gwg_const_LGA = get_pred_by_gwg(predictor=Predictor(targets=["LGA"]),
+                                                patient_features=self.patient_features,
+                                                gwg_range=self.gwg_range,
+                                                weights={"LGA": [1]})
+
+        pred_by_gwg_const_SGA = get_pred_by_gwg(predictor=Predictor(targets=["SGA"]),
+                                                patient_features=self.patient_features,
+                                                gwg_range=self.gwg_range,
+                                                weights={"SGA": [1]})
+
+        pred_by_gwg_const_LGA.rename(inplace=True, columns={"pred": "LGA"})
+        pred_by_gwg_const_SGA.rename(inplace=True, columns={"pred": "SGA"})
+
+        pred_by_gwg_const = pred_by_gwg_const_LGA.merge(pred_by_gwg_const_SGA, on="GWG")
 
         gwg_interval_recommendation = get_gwg_interval_recommendation_2T(pred_by_gwg=pred_by_gwg,
                                                                          pred_by_gwg_const=pred_by_gwg_const,
                                                                          gwg_limit=5,
                                                                          pred_limit=0.05,
-                                                                         const_th=0.18,
-                                                                         )
+                                                                         const_name1="LGA",
+                                                                         const_name2="SGA",
+                                                                         const_th1=0.18,
+                                                                         const_th2=0.18)
 
         plot_gwg_optimization(pred_by_gwg=pred_by_gwg,
                               title="FO: diabetes & hipertension / CONST: LGA & SGA",
